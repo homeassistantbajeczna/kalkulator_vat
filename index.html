@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator VAT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="logo-container">
+        <img src="cropped-logo-FB-1.png" id="siteLogo" alt="Finance Brothers Logo" class="logo d-block mx-auto">
+        <div class="zoom-controls">
+            <button id="zoomInBtn" class="btn btn-sm" aria-label="Powiększ">+</button>
+            <button id="zoomOutBtn" class="btn btn-sm" aria-label="Pomniejsz">-</button>
+            <button id="toggleDarkModeBtn" class="btn btn-sm" aria-label="Przełącz tryb ciemny">🌙</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="form-section" id="formSection">
+            <div class="header-row">
+                <h4>Kalkulator VAT</h4>
+            </div>
+            <div class="form-container">
+                <div class="form-wrapper">
+                    <form id="vatForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="amountType" class="form-label">Typ kwoty</label>
+                                <div class="select-wrapper">
+                                    <select class="form-control select-hidden" id="amountType">
+                                        <option value="netto" selected>Netto</option>
+                                        <option value="brutto">Brutto</option>
+                                    </select>
+                                    <span class="select-display" id="amountTypeDisplay">Netto ▼</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="amount" class="form-label">Kwota</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="amount" min="0" max="1000000" value="1000" step="0.01">
+                                    <span class="input-group-text">zł</span>
+                                </div>
+                                <input type="range" class="form-range" id="amountRange" min="0" max="1000000" value="1000" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="vatRate" class="form-label">Stawka VAT</label>
+                                <div class="select-wrapper">
+                                    <select class="form-control select-hidden" id="vatRate">
+                                        <option value="3">3%</option>
+                                        <option value="5">5%</option>
+                                        <option value="7">7%</option>
+                                        <option value="8">8%</option>
+                                        <option value="22">22%</option>
+                                        <option value="23" selected>23%</option>
+                                    </select>
+                                    <span class="select-display" id="vatRateDisplay">23% ▼</span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="result-section" id="resultSection">
+                <div class="result-container">
+                    <div class="result-wrapper-chart">
+                        <div class="summary-bars" id="summaryBars">
+                            <!-- Wyniki będą wyświetlane tutaj -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<style>
+    :root {
+        --primary-bg: #f5f6f5;
+        --primary-text: #333333;
+        --secondary-bg: #ffffff;
+        --accent-color: #c2b280;
+        --accent-gradient-start: #c2b280;
+        --accent-gradient-end: #b0a070;
+        --border-color: #e0e0e0;
+        --border-color-rgb: 102, 102, 102;
+        --shadow-color: rgba(0, 0, 0, 0.1);
+        --logo-bg: #e9ecef;
+        --input-bg: #fff;
+        --input-group-bg: #f5f5f5;
+        --small-font-size: 0.7em;
+        --border-radius: 5px;
+        --range-bg: #e5e5e5;
+        --button-bg: #c2b280;
+        --button-text: #333333;
+        --tooltip-color: #000000;
+    }
+
+    .dark-mode {
+        --primary-bg: #2b2b2b;
+        --primary-text: #e0e0e0;
+        --secondary-bg: #3a3a3a;
+        --accent-color: #8b7d47;
+        --accent-gradient-start: #8b7d47;
+        --accent-gradient-end: #70673b;
+        --border-color: #f5f5f5;
+        --border-color-rgb: 245, 245, 245;
+        --shadow-color: rgba(0, 0, 0, 0.5);
+        --logo-bg: #3a3a3a;
+        --input-bg: #3a3a3a;
+        --input-group-bg: #666666;
+        --range-bg: #333333;
+        --button-bg: #8b7d47;
+        --button-text: #e0e0e0;
+        --tooltip-color: #ffffff;
+    }
+
+    *, ::after, ::before {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        background-color: var(--primary-bg);
+        font-family: 'Montserrat', sans-serif;
+        font-size: var(--bs-body-font-size, 1rem);
+        font-weight: var(--bs-body-font-weight, 400);
+        line-height: var(--bs-body-line-height, 1.5);
+        color: var(--primary-text);
+        text-align: var(--bs-body-text-align, left);
+        padding: 10px;
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .container {
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 0;
+        width: 100%;
+        padding: 15px calc(var(--bs-gutter-x) * 0.5);
+        margin: 30px auto 0;
+        max-width: 1200px;
+        background: var(--secondary-bg);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px var(--shadow-color);
+    }
+
+    .logo-container {
+        background-color: var(--logo-bg);
+        padding: 15px;
+        margin-bottom: 20px;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .zoom-controls {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        gap: 5px;
+    }
+
+    .zoom-controls .btn {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        font-size: 0.9em;
+        line-height: 25px;
+        background: var(--button-bg);
+        color: var(--button-text);
+        border: none;
+        box-shadow: 0 2px 4px var(--shadow-color);
+        transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .zoom-controls .btn:hover {
+        background: var(--accent-gradient-end);
+        transform: translateY(-1px);
+    }
+
+    .logo, #siteLogo {
+        max-width: 200px;
+        margin-bottom: 0;
+        cursor: pointer;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .header-row {
+        display: block;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    .header-row h4 {
+        font-weight: 700;
+        font-size: 1.2em;
+        margin: 0;
+    }
+
+    .form-section {
+        display: block;
+        padding: 10px;
+        position: relative;
+    }
+
+    .result-section {
+        display: block;
+        padding: 10px;
+        position: relative;
+    }
+
+    .form-row {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        gap: 13px;
+        flex-wrap: wrap;
+        text-align: left;
+    }
+
+    .form-group {
+        flex: 1;
+        min-width: 150px;
+        max-width: 150px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        text-align: left;
+        margin: 0 5px;
+    }
+
+    .form-label {
+        font-size: var(--small-font-size);
+        text-transform: uppercase;
+        margin-bottom: 5px;
+        text-align: left;
+        width: 100%;
+    }
+
+    .form-control {
+        height: 22px;
+        font-size: var(--small-font-size);
+        padding: 2px;
+        text-align: center;
+        background: var(--input-bg);
+        color: var(--primary-text);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        box-sizing: border-box;
+        line-height: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .select-wrapper {
+        position: relative;
+        width: 150px;
+        max-width: 150px;
+    }
+
+    .select-hidden {
+        opacity: 0;
+        position: absolute;
+        width: 100%;
+        height: 22px;
+        z-index: 2;
+        cursor: pointer;
+    }
+
+    .select-display {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 22px;
+        font-size: var(--small-font-size);
+        padding: 2px 8px 2px 5px;
+        text-align: center;
+        background: var(--input-bg);
+        color: var(--primary-text);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        box-sizing: border-box;
+        line-height: 18px;
+        width: 100%;
+        cursor: pointer;
+        z-index: 1;
+    }
+
+    .form-control:focus {
+        outline: none !important;
+        box-shadow: 0 0 4px var(--accent-color);
+        border-color: var(--border-color);
+        background: var(--input-bg);
+        color: var(--primary-text);
+    }
+
+    .input-group-text {
+        height: 22px;
+        font-size: var(--small-font-size);
+        padding: 2px 5px;
+        text-align: center;
+        background: var(--input-group-bg);
+        color: var(--primary-text);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        box-sizing: border-box;
+        line-height: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .input-group {
+        width: 150px;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 0;
+    }
+
+    input[type="range"].form-range {
+        margin-top: 5px;
+        height: 6px;
+        background: var(--input-group-bg);
+        border: 2px solid var(--border-color);
+        border-radius: var(--border-radius);
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        width: 150px;
+        margin-left: auto;
+        margin-right: auto;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    input[type="range"].form-range:focus,
+    input[type="range"].form-range:active {
+        outline: none !important;
+        box-shadow: none !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+    }
+
+    input[type="range"].form-range::-webkit-slider-runnable-track {
+        background: var(--input-group-bg);
+        height: 6px;
+        border-radius: var(--border-radius);
+        -webkit-appearance: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+
+    input[type="range"].form-range:focus::-webkit-slider-runnable-track,
+    input[type="range"].form-range:active::-webkit-slider-runnable-track {
+        box-shadow: none !important;
+        outline: none !important;
+    }
+
+    input[type="range"].form-range::-webkit-slider-thumb {
+        background: var(--accent-gradient-start);
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        transform: translateY(2px);
+        box-shadow: none !important;
+        outline: none !important;
+    }
+
+    input[type="range"].form-range::-webkit-slider-thumb:focus,
+    input[type="range"].form-range::-webkit-slider-thumb:active {
+        outline: none !important;
+        box-shadow: none !important;
+        -webkit-appearance: none !important;
+    }
+
+    input[type="range"].form-range::-moz-range-track {
+        background: var(--input-group-bg);
+        height: 6px;
+        border-radius: var(--border-radius);
+        box-shadow: none !important;
+        outline: none !important;
+    }
+
+    input[type="range"].form-range::-moz-range-thumb {
+        background: var(--accent-gradient-start);
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+
+    input[type="range"].form-range::-moz-range-thumb:focus,
+    input[type="range"].form-range::-moz-range-thumb:active {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    .result-container {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+        position: relative;
+    }
+
+    .result-wrapper-chart {
+        width: 100%;
+        max-width: none;
+    }
+
+    .summary-bars {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .summary-bar {
+        background: linear-gradient(135deg, var(--accent-gradient-start), var(--accent-gradient-end));
+        color: var(--primary-text);
+        padding: 6px 20px;
+        margin: 5px 0;
+        border-radius: var(--border-radius);
+        text-align: center;
+        font-size: 0.9em;
+        position: relative;
+        cursor: pointer;
+        transition: color 0.3s ease;
+        width: 90%;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .summary-bar .label {
+        font-weight: normal;
+        color: var(--primary-text);
+        transition: opacity 0.1s ease;
+    }
+
+    .summary-bar .value {
+        font-weight: bold;
+        color: var(--primary-text);
+        transition: opacity 0.1s ease;
+    }
+
+    .summary-bar:hover .label, .summary-bar:hover .value {
+        opacity: 0;
+    }
+
+    .summary-bar:hover::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: var(--tooltip-color);
+        font-weight: bold;
+        font-size: 1.1em;
+        z-index: 1;
+    }
+
+    @media (max-width: 576px) {
+        .form-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .form-group, .input-group {
+            width: 200px;
+            max-width: 200px;
+            min-width: 200px;
+            margin: 5px 0;
+            align-self: flex-start;
+        }
+
+        .form-control, .select-display {
+            height: 26px;
+            padding: 4px 8px;
+            line-height: 20px;
+        }
+
+        .input-group-text {
+            height: 26px;
+            width: 80px;
+            padding: 4px 8px;
+            line-height: 20px;
+        }
+
+        .select-wrapper {
+            width: 200px;
+            max-width: 200px;
+        }
+
+        .select-display {
+            width: 200px;
+            height: 26px;
+            line-height: 20px;
+        }
+
+        input[type="range"].form-range {
+            width: 200px;
+            align-self: flex-start;
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        .logo-container {
+            display: flex !important;
+            justify-content: flex-start !important;
+            text-align: left !important;
+            flex-wrap: wrap;
+        }
+
+        .logo, #siteLogo {
+            margin: 0 !important;
+            padding: 10px 0;
+            max-width: 150px;
+        }
+    }
+</style>
+
+<script>
+    const formatNumber = (num) => {
+        return parseFloat(num).toLocaleString('pl-PL', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+            useGrouping: true
+        });
+    };
+
+    const elements = {
+        formSection: document.getElementById("formSection"),
+        resultSection: document.getElementById("resultSection"),
+        amountType: document.getElementById("amountType"),
+        amount: document.getElementById("amount"),
+        amountRange: document.getElementById("amountRange"),
+        vatRate: document.getElementById("vatRate"),
+        summaryBars: document.getElementById("summaryBars")
+    };
+
+    function updateSelectDisplay(selectElement, displayElement) {
+        const selectedOption = selectElement.options[selectElement.selectedIndex].text;
+        displayElement.textContent = `${selectedOption} ▼`;
+    }
+
+    // Inicjalizacja wyświetlania selectów
+    const amountTypeDisplay = document.getElementById("amountTypeDisplay");
+    const vatRateDisplay = document.getElementById("vatRateDisplay");
+    updateSelectDisplay(elements.amountType, amountTypeDisplay);
+    updateSelectDisplay(elements.vatRate, vatRateDisplay);
+
+    // Obsługa kliknięcia w select-display
+    amountTypeDisplay.addEventListener("click", () => {
+        elements.amountType.focus();
+        elements.amountType.click();
+    });
+
+    vatRateDisplay.addEventListener("click", () => {
+        elements.vatRate.focus();
+        elements.vatRate.click();
+    });
+
+    // Synchronizacja suwaka i pola liczbowego dla kwoty
+    elements.amountRange.addEventListener("input", () => {
+        let value = parseFloat(elements.amountRange.value);
+        if (value < 0) {
+            value = 0;
+            elements.amountRange.value = value;
+        }
+        elements.amount.value = value.toFixed(2);
+        calculateVAT();
+    });
+
+    elements.amount.addEventListener("input", () => {
+        let value = parseFloat(elements.amount.value);
+        const maxValue = parseFloat(elements.amountRange.max);
+        if (isNaN(value) || value < 0) {
+            value = 0;
+            elements.amount.value = value.toFixed(2);
+        }
+        if (value > maxValue) {
+            value = maxValue;
+            elements.amount.value = value.toFixed(2);
+        }
+        elements.amountRange.value = value;
+        calculateVAT();
+    });
+
+    // Obliczenia VAT
+    function calculateVAT() {
+        const amountType = elements.amountType.value;
+        const amount = parseFloat(elements.amount.value) || 0;
+        const vatRate = parseFloat(elements.vatRate.value) / 100;
+
+        let netto, brutto, vatAmount;
+
+        if (amountType === "netto") {
+            netto = amount;
+            vatAmount = netto * vatRate;
+            brutto = netto + vatAmount;
+        } else {
+            brutto = amount;
+            netto = brutto / (1 + vatRate);
+            vatAmount = brutto - netto;
+        }
+
+        // Wyświetlenie wyników
+        elements.summaryBars.innerHTML = `
+            <div class="summary-bar" data-tooltip="${formatNumber(brutto)} zł"><span class="label">Kwota brutto:</span> <span class="value">${formatNumber(brutto)} zł</span></div>
+            <div class="summary-bar" data-tooltip="${formatNumber(netto)} zł"><span class="label">Kwota netto:</span> <span class="value">${formatNumber(netto)} zł</span></div>
+            <div class="summary-bar" data-tooltip="${formatNumber(vatAmount)} zł"><span class="label">Podatek VAT (${Math.round(vatRate * 100)}%):</span> <span class="value">${formatNumber(vatAmount)} zł</span></div>
+        `;
+    }
+
+    // Nasłuchiwanie zmian w selectach
+    elements.amountType.addEventListener("change", () => {
+        updateSelectDisplay(elements.amountType, amountTypeDisplay);
+        calculateVAT();
+    });
+
+    elements.vatRate.addEventListener("change", () => {
+        updateSelectDisplay(elements.vatRate, vatRateDisplay);
+        calculateVAT();
+    });
+
+    // Inicjalne obliczenie
+    calculateVAT();
+
+    // Zoom
+    let currentZoom = 1;
+    const zoomStep = 0.1;
+    const minZoom = 0.5;
+    const maxZoom = 2;
+
+    function updateZoom() {
+        const container = document.querySelector('.container');
+        container.style.transform = `scale(${currentZoom})`;
+        container.style.transformOrigin = 'top center';
+    }
+
+    document.getElementById("zoomInBtn").addEventListener("click", () => {
+        if (currentZoom < maxZoom) {
+            currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
+            updateZoom();
+        }
+    });
+
+    document.getElementById("zoomOutBtn").addEventListener("click", () => {
+        if (currentZoom > minZoom) {
+            currentZoom = Math.max(minZoom, currentZoom - zoomStep);
+            updateZoom();
+        }
+    });
+
+    // Tryb ciemny
+    function toggleDarkMode() {
+        const body = document.body;
+        const isDarkMode = body.classList.contains('dark-mode');
+        
+        if (isDarkMode) {
+            body.classList.remove('dark-mode');
+            body.classList.add('light-mode');
+            localStorage.setItem('theme', 'light');
+            document.getElementById('toggleDarkModeBtn').textContent = '🌙';
+        } else {
+            body.classList.remove('light-mode');
+            body.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+            document.getElementById('toggleDarkModeBtn').textContent = '☀️';
+        }
+    }
+
+    function initializeTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('toggleDarkModeBtn').textContent = '☀️';
+        } else {
+            document.body.classList.add('light-mode');
+            document.getElementById('toggleDarkModeBtn').textContent = '🌙';
+        }
+    }
+
+    document.getElementById('toggleDarkModeBtn').addEventListener('click', toggleDarkMode);
+    initializeTheme();
+
+    // Kliknięcie w logo
+    document.getElementById('siteLogo').addEventListener('click', () => {
+        window.open('https://finance-brothers.pl', '_blank');
+    });
+</script>
+</body>
+</html>
