@@ -197,7 +197,7 @@
     .header-row {
         display: block;
         margin-bottom: 15px;
-        text-align: left; /* Przesunięcie nagłówka do lewej */
+        text-align: center;
     }
 
     .header-row h4 {
@@ -244,7 +244,7 @@
         font-size: var(--small-font-size);
         text-transform: uppercase;
         margin-bottom: 5px;
-        text-align: center;
+        text-align: left;
         width: 100%;
     }
 
@@ -273,8 +273,10 @@
     .select-hidden {
         opacity: 0;
         position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
-        height: 22px;
+        height: 100%; /* Zwiększono wysokość, aby pokryć select-display */
         z-index: 2;
         cursor: pointer;
     }
@@ -296,6 +298,7 @@
         width: 100%;
         cursor: pointer;
         z-index: 1;
+        user-select: none; /* Zapobiega zaznaczaniu tekstu */
     }
 
     .form-control:focus {
@@ -551,6 +554,10 @@
             padding: 10px 0;
             max-width: 150px;
         }
+
+        .select-hidden {
+            height: 26px; /* Dopasowanie do wysokości select-display w mobilnym */
+        }
     }
 </style>
 
@@ -570,7 +577,9 @@
         amount: document.getElementById("amount"),
         amountRange: document.getElementById("amountRange"),
         vatRate: document.getElementById("vatRate"),
-        summaryBars: document.getElementById("summaryBars")
+        summaryBars: document.getElementById("summaryBars"),
+        amountTypeDisplay: document.getElementById("amountTypeDisplay"),
+        vatRateDisplay: document.getElementById("vatRateDisplay")
     };
 
     function updateSelectDisplay(selectElement, displayElement) {
@@ -579,20 +588,18 @@
     }
 
     // Inicjalizacja wyświetlania selectów
-    const amountTypeDisplay = document.getElementById("amountTypeDisplay");
-    const vatRateDisplay = document.getElementById("vatRateDisplay");
-    updateSelectDisplay(elements.amountType, amountTypeDisplay);
-    updateSelectDisplay(elements.vatRate, vatRateDisplay);
+    updateSelectDisplay(elements.amountType, elements.amountTypeDisplay);
+    updateSelectDisplay(elements.vatRate, elements.vatRateDisplay);
 
     // Obsługa kliknięcia w select-display
-    amountTypeDisplay.addEventListener("click", () => {
+    elements.amountTypeDisplay.addEventListener("click", () => {
         elements.amountType.focus();
-        elements.amountType.click();
+        elements.amountType.dispatchEvent(new Event('click')); // Wyraźne wywołanie kliknięcia
     });
 
-    vatRateDisplay.addEventListener("click", () => {
+    elements.vatRateDisplay.addEventListener("click", () => {
         elements.vatRate.focus();
-        elements.vatRate.click();
+        elements.vatRate.dispatchEvent(new Event('click')); // Wyraźne wywołanie kliknięcia
     });
 
     // Synchronizacja suwaka i pola liczbowego dla kwoty
@@ -649,12 +656,12 @@
 
     // Nasłuchiwanie zmian w selectach
     elements.amountType.addEventListener("change", () => {
-        updateSelectDisplay(elements.amountType, amountTypeDisplay);
+        updateSelectDisplay(elements.amountType, elements.amountTypeDisplay);
         calculateVAT();
     });
 
     elements.vatRate.addEventListener("change", () => {
-        updateSelectDisplay(elements.vatRate, vatRateDisplay);
+        updateSelectDisplay(elements.vatRate, elements.vatRateDisplay);
         calculateVAT();
     });
 
